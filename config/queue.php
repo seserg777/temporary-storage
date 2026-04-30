@@ -73,6 +73,25 @@ return [
             'after_commit' => false,
         ],
 
+        'rabbitmq' => [
+            'driver' => 'rabbitmq',
+            'queue'  => env('RABBITMQ_QUEUE', 'default'),
+            'hosts'  => [
+                [
+                    'host'     => env('RABBITMQ_HOST', '127.0.0.1'),
+                    'port'     => (int) env('RABBITMQ_PORT', 5672),
+                    'vhost'    => env('RABBITMQ_VHOST', '/'),
+                    'user'     => env('RABBITMQ_LOGIN', 'guest'),
+                    'password' => env('RABBITMQ_PASSWORD', 'guest'),
+                ],
+            ],
+            'options' => [
+                'queue' => [
+                    'job' => \VladimirYuldashev\LaravelQueueRabbitMQ\Queue\Jobs\RabbitMQJob::class,
+                ],
+            ],
+        ],
+
         'deferred' => [
             'driver' => 'deferred',
         ],
