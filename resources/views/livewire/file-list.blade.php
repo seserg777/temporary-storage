@@ -23,22 +23,28 @@
                                 {{ strtoupper(pathinfo($file->original_name, PATHINFO_EXTENSION)) }}
                             </td>
                             <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
-                                {{ number_format($file->size / 1024 / 1024, 2) }} MB
+                                {{ $file->formatted_size }}
                             </td>
                             <td class="px-4 py-3 text-gray-500 whitespace-nowrap">
                                 {{ $file->expires_at->format('d.m.Y H:i') }}
                             </td>
                             <td class="px-4 py-3 text-right">
-                                <form method="POST"
-                                      action="{{ route('files.destroy', $file) }}"
-                                      onsubmit="return confirm('Are you sure you want to delete this file?')">
-                                    @csrf
-                                    @method('DELETE')
-                                    <button type="submit"
-                                            class="text-red-600 hover:text-red-800 font-medium text-xs">
-                                        Delete
-                                    </button>
-                                </form>
+                                <div class="flex items-center justify-end gap-3">
+                                    <a href="{{ route('files.show', $file) }}"
+                                       class="text-indigo-600 hover:text-indigo-800 font-medium text-xs">
+                                        View
+                                    </a>
+                                    <form method="POST"
+                                          action="{{ route('files.destroy', $file) }}"
+                                          onsubmit="return confirm('Are you sure you want to delete this file?')">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="text-red-600 hover:text-red-800 font-medium text-xs">
+                                            Delete
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     @endforeach

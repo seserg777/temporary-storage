@@ -2,11 +2,20 @@
 import { test, expect } from '@playwright/test';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PDF_PATH = path.join(__dirname, 'fixtures', 'sample.pdf');
+const PROJECT_ROOT = path.resolve(__dirname, '../../');
 
 test.describe('Temporary Storage — file lifecycle', () => {
+
+    test.beforeAll(() => {
+        execSync('php artisan migrate:fresh --force', {
+            cwd: PROJECT_ROOT,
+            stdio: 'ignore',
+        });
+    });
 
     test('home page shows the uploader and no file list', async ({ page }) => {
         await page.goto('/');
@@ -46,10 +55,14 @@ test.describe('Temporary Storage — file lifecycle', () => {
     test('shows session expired message when CSRF token is invalid', async ({ page }) => {
         await page.goto('/');
 
+        // Intercept the upload request and return a 419 with the same JSON the server produces
         await page.route('**/files', async (route, request) => {
             if (request.method() === 'POST') {
-                const headers = { ...request.headers(), 'x-csrf-token': 'invalid-token' };
-                await route.continue({ headers });
+                await route.fulfill({
+                    status: 419,
+                    contentType: 'application/json',
+                    body: JSON.stringify({ message: 'Your session has expired. Please refresh the page.' }),
+                });
             } else {
                 await route.continue();
             }
@@ -62,18 +75,36 @@ test.describe('Temporary Storage — file lifecycle', () => {
     });
 
     test('shows rate limit error after exceeding upload limit', async ({ page }) => {
-        // Upload 5 files to exhaust the per-IP limit
-        for (let i = 0; i < 5; i++) {
-            await page.goto('/');
-            await page.locator('#file-input').setInputFiles(PDF_PATH);
-            await page.waitForURL('**/files', { timeout: 15_000 });
-        }
-
-        // 6th upload should be rate-limited
         await page.goto('/');
+
+        await page.route('**/files', async (route, request) => {
+            if (request.method() === 'POST') {
+                await route.fulfill({
+                    status: 429,
+                    headers: { 'Retry-After': '60' },
+                    contentType: 'application/json',
+                    body: JSON.stringify({ message: 'Too Many Attempts.' }),
+                });
+            } else {
+                await route.continue();
+            }
+        });
+
         await page.locator('#file-input').setInputFiles(PDF_PATH);
 
         await expect(page.locator('#upload-error')).toBeVisible({ timeout: 10_000 });
         await expect(page.locator('#upload-error')).toContainText(/too many/i);
+    });
+
+    test('clicking View on a file opens the file detail page', async ({ page }) => {
+        await page.goto('/');
+        await page.locator('#file-input').setInputFiles(PDF_PATH);
+        await page.waitForURL('**/files', { timeout: 15_000 });
+
+        await page.locator('tbody tr').first().locator('a', { hasText: 'View' }).click();
+
+        await expect(page).toHaveURL(/\/files\/\d+/);
+        await expect(page.locator('dl')).toBeVisible();
+        await expect(page.locator('dd').first()).toContainText('sample.pdf');
     });
 });

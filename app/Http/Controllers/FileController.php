@@ -27,6 +27,11 @@ class FileController extends Controller
         return view('files.index');
     }
 
+    public function show(UploadedFile $file): View
+    {
+        return view('files.show', compact('file'));
+    }
+
     public function store(UploadFileRequest $request): JsonResponse
     {
         /** @var \Illuminate\Http\UploadedFile $file */
