@@ -45,7 +45,22 @@ test.describe('Temporary Storage — file lifecycle', () => {
 
         page.once('dialog', dialog => dialog.accept());
 
-        await page.locator('tbody tr').first().locator('button[type="submit"]').click();
+        await page.locator('tbody tr').first().locator('button:has-text("Delete")').click();
+
+        await expect(page.locator('p.text-center')).toContainText('No files uploaded yet.');
+    });
+
+    test('deleting a file from the show page redirects to /files', async ({ page }) => {
+        await page.goto('/');
+        await page.locator('#file-input').setInputFiles(PDF_PATH);
+        await page.waitForURL('**/files', { timeout: 15_000 });
+
+        await page.locator('tbody tr').first().locator('a', { hasText: 'View' }).click();
+        await expect(page).toHaveURL(/\/files\/\d+/);
+
+        page.once('dialog', dialog => dialog.accept());
+
+        await page.locator('button:has-text("Delete this file")').click();
 
         await page.waitForURL('**/files');
 

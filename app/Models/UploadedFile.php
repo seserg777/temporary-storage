@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
+/**
+ * @property Carbon $expires_at
+ */
 #[Fillable([
     'original_name',
     'stored_name',

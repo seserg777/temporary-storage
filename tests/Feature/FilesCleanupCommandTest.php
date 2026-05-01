@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
-use App\Jobs\SendFileDeletedNotificationJob;
+use App\Jobs\SendCleanupSummaryNotificationJob;
 use App\Models\UploadedFile;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
@@ -59,7 +59,7 @@ class FilesCleanupCommandTest extends TestCase
         $this->assertDatabaseCount('uploaded_files', 1);
     }
 
-    public function test_cleanup_dispatches_notification_job_for_each_expired_file(): void
+    public function test_cleanup_dispatches_single_summary_job_for_all_expired_files(): void
     {
         Queue::fake();
 
@@ -69,17 +69,25 @@ class FilesCleanupCommandTest extends TestCase
 
         $this->artisan('files:cleanup')->assertSuccessful();
 
-        Queue::assertPushed(SendFileDeletedNotificationJob::class, 2);
+        Queue::assertPushed(SendCleanupSummaryNotificationJob::class, 1);
 
         Queue::assertPushed(
-            SendFileDeletedNotificationJob::class,
-            fn (SendFileDeletedNotificationJob $job): bool => $job->originalName === 'expired1.pdf'
+            SendCleanupSummaryNotificationJob::class,
+            fn (SendCleanupSummaryNotificationJob $job): bool => count($job->deletedFiles) === 2
+                && collect($job->deletedFiles)->pluck('original_name')->contains('expired1.pdf')
+                && collect($job->deletedFiles)->pluck('original_name')->contains('expired2.pdf')
         );
+    }
 
-        Queue::assertPushed(
-            SendFileDeletedNotificationJob::class,
-            fn (SendFileDeletedNotificationJob $job): bool => $job->originalName === 'expired2.pdf'
-        );
+    public function test_cleanup_does_not_dispatch_summary_job_when_no_expired_files(): void
+    {
+        Queue::fake();
+
+        $this->createFileRecord('fresh.pdf', 'uploads/fresh.pdf', expired: false);
+
+        $this->artisan('files:cleanup')->assertSuccessful();
+
+        Queue::assertNothingPushed();
     }
 
     private function createFileRecord(string $originalName, string $path, bool $expired): UploadedFile

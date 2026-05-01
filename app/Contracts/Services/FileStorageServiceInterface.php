@@ -23,7 +23,7 @@ interface FileStorageServiceInterface
     /**
      * Return a paginated listing of all uploaded files, newest first.
      *
-     * @return LengthAwarePaginator<UploadedFile>
+     * @return LengthAwarePaginator<int, UploadedFile>
      */
     public function paginate(int $perPage = 20): LengthAwarePaginator;
 

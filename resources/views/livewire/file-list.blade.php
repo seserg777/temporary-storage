@@ -34,16 +34,12 @@
                                        class="text-indigo-600 hover:text-indigo-800 font-medium text-xs">
                                         View
                                     </a>
-                                    <form method="POST"
-                                          action="{{ route('files.destroy', $file) }}"
-                                          onsubmit="return confirm('Are you sure you want to delete this file?')">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit"
-                                                class="text-red-600 hover:text-red-800 font-medium text-xs">
-                                            Delete
-                                        </button>
-                                    </form>
+                                    <button type="button"
+                                            wire:click="deleteFile({{ $file->id }})"
+                                            wire:confirm="Are you sure you want to delete this file?"
+                                            class="text-red-600 hover:text-red-800 font-medium text-xs cursor-pointer">
+                                        Delete
+                                    </button>
                                 </div>
                             </td>
                         </tr>

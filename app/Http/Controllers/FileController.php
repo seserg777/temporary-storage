@@ -9,6 +9,7 @@ use App\Http\Requests\UploadFileRequest;
 use App\Models\UploadedFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class FileController extends Controller
@@ -50,9 +51,13 @@ class FileController extends Controller
         ], 201);
     }
 
-    public function destroy(UploadedFile $file): RedirectResponse
+    public function destroy(UploadedFile $file, Request $request): RedirectResponse|JsonResponse
     {
         $this->fileStorageService->delete($file);
+
+        if ($request->wantsJson()) {
+            return response()->json(['message' => 'File deleted successfully.']);
+        }
 
         return redirect()->route('files.index')
             ->with('success', 'File deleted successfully.');

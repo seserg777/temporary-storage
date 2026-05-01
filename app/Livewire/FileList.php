@@ -22,9 +22,16 @@ class FileList extends Component
         $this->resetPage();
     }
 
+    public function deleteFile(int $id): void
+    {
+        $file = UploadedFile::findOrFail($id);
+        app(FileStorageServiceInterface::class)->delete($file);
+        session()->flash('success', 'File deleted successfully.');
+    }
+
     public function render(): View
     {
-        /** @var LengthAwarePaginator<UploadedFile> $files */
+        /** @var LengthAwarePaginator<int, UploadedFile> $files */
         $files = app(FileStorageServiceInterface::class)->paginate(20);
 
         return view('livewire.file-list', compact('files'));
