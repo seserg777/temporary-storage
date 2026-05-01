@@ -73,6 +73,9 @@ DB_PASSWORD=
 | `php artisan migrate` | Run pending database migrations |
 | `php artisan migrate:fresh --seed` | Drop all tables, re-migrate, and seed |
 | `php artisan files:cleanup` | Delete all expired uploaded files from disk and DB |
+| `php artisan queue:listen --tries=1 --timeout=0` | Start the RabbitMQ queue worker (dev — auto-restarts on code changes) |
+| `php artisan queue:work --queue=notifications` | Start a persistent queue worker (production) |
+| `php artisan schedule:work` | Run the task scheduler locally (triggers `files:cleanup` hourly) |
 
 ### npm
 
@@ -81,6 +84,38 @@ DB_PASSWORD=
 | `npm run build` | Compile assets for production (Vite) |
 | `npm run dev` | Start Vite dev server with HMR |
 | `npm run test:e2e` | Run Playwright E2E tests (headed, single worker) and open HTML report |
+
+## Queues & Jobs
+
+The app uses **RabbitMQ** for async notifications via the `vladimir-yuldashev/laravel-queue-rabbitmq` package.
+
+### Connection
+
+| Setting | Default         | Env var |
+|---|-----------------|---|
+| Host | `127.0.0.1`     | `RABBITMQ_HOST` |
+| Port | `5672`          | `RABBITMQ_PORT` |
+| Vhost | `/`             | `RABBITMQ_VHOST` |
+| User | `user`          | `RABBITMQ_LOGIN` |
+| Queue | `notifications` | `RABBITMQ_QUEUE` |
+
+### Available Jobs
+
+| Job class | Dispatched when | Retries | Backoff |
+|---|---|---|---|
+| `App\Jobs\SendFileDeletedNotificationJob` | A file is deleted (`FileStorageService::delete()`) | 3 | 30 s |
+
+`SendFileDeletedNotificationJob` sends a `FileDeletedMail` email with the file name and deletion timestamp. After all retries are exhausted, the failure is logged and the job is recorded in the `failed_jobs` database table.
+
+### Starting the Worker
+
+```bash
+# Development (auto-restarts on code changes):
+php artisan queue:listen --tries=1 --timeout=0
+
+# Production (persistent worker):
+php artisan queue:work --queue=notifications
+```
 
 ## Running Tests
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Contracts\Services\FileStorageServiceInterface;
+use App\Jobs\SendCleanupSummaryNotificationJob;
 use App\Jobs\SendFileDeletedNotificationJob;
 use App\Models\UploadedFile;
 use Illuminate\Database\Eloquent\Collection;
@@ -47,7 +48,7 @@ class FileStorageService implements FileStorageServiceInterface
                 ]);
             });
         } catch (Throwable $e) {
-            if ($storedPath !== null) {
+            if ($storedPath !== null && $storedPath !== false) {
                 Storage::disk(self::DISK)->delete($storedPath);
             }
 
@@ -77,7 +78,7 @@ class FileStorageService implements FileStorageServiceInterface
     }
 
     /**
-     * @return LengthAwarePaginator<UploadedFile>
+     * @return LengthAwarePaginator<int, UploadedFile>
      */
     public function paginate(int $perPage = 20): LengthAwarePaginator
     {
@@ -96,13 +97,39 @@ class FileStorageService implements FileStorageServiceInterface
     {
         /** @var Collection<int, UploadedFile> $expired */
         $expired = UploadedFile::expired()->get();
-        $count = 0;
 
-        foreach ($expired as $file) {
-            $this->delete($file);
-            $count++;
+        if ($expired->isEmpty()) {
+            return 0;
         }
 
-        return $count;
+        /** @var array<int, array{original_name: string, expires_at: string}> $deletedFiles */
+        $deletedFiles = [];
+
+        foreach ($expired as $file) {
+            $deletedFiles[] = [
+                'original_name' => $file->original_name,
+                'expires_at' => $file->expires_at->toDateTimeString(),
+            ];
+            $this->deleteFileAndRecord($file);
+        }
+
+        try {
+            SendCleanupSummaryNotificationJob::dispatch($deletedFiles);
+        } catch (Throwable $e) {
+            Log::error('Cleanup summary notification could not be queued.', [
+                'file_count' => count($deletedFiles),
+                'error' => $e->getMessage(),
+            ]);
+        }
+
+        return count($deletedFiles);
+    }
+
+    private function deleteFileAndRecord(UploadedFile $file): void
+    {
+        DB::transaction(function () use ($file): void {
+            Storage::disk($file->disk)->delete($file->path);
+            $file->delete();
+        });
     }
 }

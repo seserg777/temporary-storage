@@ -49,16 +49,21 @@
                 &larr; Back to files
             </a>
 
-            <form method="POST"
-                  action="{{ route('files.destroy', $file) }}"
-                  onsubmit="return confirm('Are you sure you want to delete this file?')">
-                @csrf
-                @method('DELETE')
-                <button type="submit"
-                        class="text-sm text-red-600 hover:text-red-800 font-medium">
+            <div x-data>
+                <button type="button"
+                        @click="if (confirm('Are you sure you want to delete this file?')) {
+                            fetch('{{ route('files.destroy', $file) }}', {
+                                method: 'DELETE',
+                                headers: {
+                                    'X-CSRF-TOKEN': document.querySelector('meta[name=csrf-token]').content,
+                                    'Accept': 'application/json'
+                                }
+                            }).then(r => r.ok && (window.location.href = '{{ route('files.index') }}'))
+                        }"
+                        class="text-sm text-red-600 hover:text-red-800 font-medium cursor-pointer">
                     Delete this file
                 </button>
-            </form>
+            </div>
         </div>
     </div>
 @endsection
