@@ -36,7 +36,7 @@ class FileUploadTest extends TestCase
         $response = $this->post(route('files.store'), ['file' => $file]);
 
         $response->assertCreated();
-        $response->assertJsonStructure(['message', 'file' => ['id', 'original_name', 'size', 'expires_at']]);
+        $response->assertJsonStructure(['message', 'data' => ['id', 'original_name', 'size', 'expires_at']]);
 
         $this->assertDatabaseCount('uploaded_files', 1);
         $this->assertDatabaseHas('uploaded_files', ['original_name' => 'document.pdf']);
