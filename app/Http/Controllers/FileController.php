@@ -6,6 +6,7 @@ namespace App\Http\Controllers;
 
 use App\Contracts\Services\FileStorageServiceInterface;
 use App\Http\Requests\UploadFileRequest;
+use App\Http\Resources\UploadedFileResource;
 use App\Models\UploadedFile;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -40,15 +41,10 @@ class FileController extends Controller
 
         $uploadedFile = $this->fileStorageService->store($file);
 
-        return response()->json([
-            'message' => 'File uploaded successfully.',
-            'file' => [
-                'id' => $uploadedFile->id,
-                'original_name' => $uploadedFile->original_name,
-                'size' => $uploadedFile->size,
-                'expires_at' => $uploadedFile->expires_at->toIso8601String(),
-            ],
-        ], 201);
+        return (new UploadedFileResource($uploadedFile))
+            ->additional(['message' => 'File uploaded successfully.'])
+            ->response()
+            ->setStatusCode(201);
     }
 
     public function destroy(UploadedFile $file, Request $request): RedirectResponse|JsonResponse
