@@ -4,14 +4,18 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Contracts\Services\FileStorageServiceInterface;
 use App\Jobs\SendFileDeletedNotificationJob;
 use App\Mail\FileDeletedMail;
 use App\Models\UploadedFile;
+use Illuminate\Contracts\Bus\Dispatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 use Tests\TestCase;
 
 class FileDeleteTest extends TestCase
@@ -31,12 +35,12 @@ class FileDeleteTest extends TestCase
 
         $file = UploadedFile::create([
             'original_name' => 'test.pdf',
-            'stored_name'   => 'test-file.pdf',
-            'mime_type'     => 'application/pdf',
-            'size'          => 12,
-            'disk'          => 'public',
-            'path'          => $fakePath,
-            'expires_at'    => Carbon::now()->addDays(7),
+            'stored_name' => 'test-file.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 12,
+            'disk' => 'public',
+            'path' => $fakePath,
+            'expires_at' => Carbon::now()->addHours(24),
         ]);
 
         $response = $this->delete(route('files.destroy', $file));
@@ -64,12 +68,12 @@ class FileDeleteTest extends TestCase
 
         $file = UploadedFile::create([
             'original_name' => 'test.pdf',
-            'stored_name'   => 'test-file.pdf',
-            'mime_type'     => 'application/pdf',
-            'size'          => 12,
-            'disk'          => 'public',
-            'path'          => $fakePath,
-            'expires_at'    => Carbon::now()->addDays(7),
+            'stored_name' => 'test-file.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 12,
+            'disk' => 'public',
+            'path' => $fakePath,
+            'expires_at' => Carbon::now()->addHours(24),
         ]);
 
         $this->delete(route('files.destroy', $file));
@@ -93,5 +97,41 @@ class FileDeleteTest extends TestCase
             FileDeletedMail::class,
             fn (FileDeletedMail $mail): bool => $mail->hasTo('recipient@example.com')
         );
+    }
+
+    public function test_delete_does_not_throw_when_job_dispatch_fails(): void
+    {
+        Log::spy();
+
+        $fakePath = 'uploads/test-file.pdf';
+        Storage::disk('public')->put($fakePath, 'fake content');
+
+        $file = UploadedFile::create([
+            'original_name' => 'test.pdf',
+            'stored_name' => 'test-file.pdf',
+            'mime_type' => 'application/pdf',
+            'size' => 12,
+            'disk' => 'public',
+            'path' => $fakePath,
+            'expires_at' => Carbon::now()->addHours(24),
+        ]);
+
+        $this->mock(Dispatcher::class, function ($mock): void {
+            $mock->shouldReceive('dispatch')
+                ->andThrow(new RuntimeException('Queue driver failure'));
+        });
+
+        $service = $this->app->make(FileStorageServiceInterface::class);
+        $service->delete($file);
+
+        $this->assertDatabaseMissing('uploaded_files', ['id' => $file->id]);
+        Storage::disk('public')->assertMissing($fakePath);
+
+        Log::shouldHaveReceived('error')
+            ->once()
+            ->with(
+                \Mockery::pattern('/could not be queued/'),
+                \Mockery::type('array')
+            );
     }
 }

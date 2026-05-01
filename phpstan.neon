@@ -1,0 +1,16 @@
+includes:
+    - vendor/larastan/larastan/extension.neon
+
+parameters:
+    level: 7
+    paths:
+        - app/Console
+        - app/Contracts
+        - app/Http/Controllers/FileController.php
+        - app/Http/Requests
+        - app/Jobs
+        - app/Livewire
+        - app/Mail
+        - app/Models/UploadedFile.php
+        - app/Services
+        - app/Providers/AppServiceProvider.php

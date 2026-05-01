@@ -14,6 +14,7 @@ class ExampleTest extends TestCase
     {
         $response = $this->get('/');
 
-        $response->assertRedirect(route('files.index'));
+        $response->assertOk();
+        $response->assertViewIs('home');
     }
 }

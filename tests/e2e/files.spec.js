@@ -42,4 +42,38 @@ test.describe('Temporary Storage — file lifecycle', () => {
 
         await expect(page.locator('p.text-center')).toContainText('No files uploaded yet.');
     });
+
+    test('shows session expired message when CSRF token is invalid', async ({ page }) => {
+        await page.goto('/');
+
+        await page.route('**/files', async (route, request) => {
+            if (request.method() === 'POST') {
+                const headers = { ...request.headers(), 'x-csrf-token': 'invalid-token' };
+                await route.continue({ headers });
+            } else {
+                await route.continue();
+            }
+        });
+
+        await page.locator('#file-input').setInputFiles(PDF_PATH);
+
+        await expect(page.locator('#upload-error')).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('#upload-error')).toContainText(/session.*expired|expired.*session/i);
+    });
+
+    test('shows rate limit error after exceeding upload limit', async ({ page }) => {
+        // Upload 5 files to exhaust the per-IP limit
+        for (let i = 0; i < 5; i++) {
+            await page.goto('/');
+            await page.locator('#file-input').setInputFiles(PDF_PATH);
+            await page.waitForURL('**/files', { timeout: 15_000 });
+        }
+
+        // 6th upload should be rate-limited
+        await page.goto('/');
+        await page.locator('#file-input').setInputFiles(PDF_PATH);
+
+        await expect(page.locator('#upload-error')).toBeVisible({ timeout: 10_000 });
+        await expect(page.locator('#upload-error')).toContainText(/too many/i);
+    });
 });

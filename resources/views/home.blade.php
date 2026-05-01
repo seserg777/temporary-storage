@@ -4,7 +4,7 @@
     <div class="mb-8">
         <h1 class="text-2xl font-bold text-gray-800 mb-1">Upload a file</h1>
         <p class="text-gray-500 text-sm">
-            Upload PDF or DOCX files. Files are automatically deleted after 7 days.
+            Upload PDF or DOCX files. Files are automatically deleted after 24 hours.
             <a href="{{ route('files.index') }}" class="text-indigo-600 hover:underline ml-1">View uploaded files &rarr;</a>
         </p>
     </div>

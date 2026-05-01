@@ -49,7 +49,7 @@ class UploadFileRequest extends FormRequest
         return [
             'file.required' => 'Please select a file to upload.',
             'file.mimetypes' => 'Only PDF and DOCX files are allowed.',
-            'file.max'       => 'The file must not exceed 10 MB.',
+            'file.max' => 'The file must not exceed 10 MB.',
         ];
     }
 }

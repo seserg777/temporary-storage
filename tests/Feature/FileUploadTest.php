@@ -100,7 +100,7 @@ class FileUploadTest extends TestCase
         $response->assertJsonValidationErrors(['file']);
     }
 
-    public function test_uploaded_file_has_expires_at_set_to_7_days(): void
+    public function test_uploaded_file_has_expires_at_set_to_24_hours(): void
     {
         Carbon::setTestNow(Carbon::parse('2026-04-30 12:00:00'));
 
@@ -111,7 +111,7 @@ class FileUploadTest extends TestCase
         $record = UploadedFile::first();
 
         $this->assertEquals(
-            '2026-05-07 12:00:00',
+            '2026-05-01 12:00:00',
             $record->expires_at->format('Y-m-d H:i:s')
         );
 

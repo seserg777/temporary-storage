@@ -24,7 +24,7 @@ class UploadedFile extends Model
     {
         return [
             'expires_at' => 'datetime',
-            'size'       => 'integer',
+            'size' => 'integer',
         ];
     }
 

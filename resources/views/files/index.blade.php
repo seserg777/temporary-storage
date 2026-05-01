@@ -4,7 +4,7 @@
     <div class="mb-8">
         <h1 class="text-2xl font-bold text-gray-800 mb-1">Uploaded Files</h1>
         <p class="text-gray-500 text-sm">
-            Files are automatically deleted after 7 days.
+            Files are automatically deleted after 24 hours.
             <a href="{{ route('home') }}" class="text-indigo-600 hover:underline ml-1">&larr; Upload another file</a>
         </p>
     </div>

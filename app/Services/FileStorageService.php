@@ -12,6 +12,7 @@ use Illuminate\Http\UploadedFile as HttpUploadedFile;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Throwable;
 
@@ -21,7 +22,7 @@ class FileStorageService implements FileStorageServiceInterface
 
     private const string DIRECTORY = 'uploads';
 
-    private const int RETENTION_DAYS = 7;
+    private const int RETENTION_HOURS = 24;
 
     public function store(HttpUploadedFile $file): UploadedFile
     {
@@ -42,7 +43,7 @@ class FileStorageService implements FileStorageServiceInterface
                     'size' => $file->getSize(),
                     'disk' => self::DISK,
                     'path' => $storedPath,
-                    'expires_at' => Carbon::now()->addDays(self::RETENTION_DAYS),
+                    'expires_at' => Carbon::now()->addHours(self::RETENTION_HOURS),
                 ]);
             });
         } catch (Throwable $e) {
@@ -64,7 +65,15 @@ class FileStorageService implements FileStorageServiceInterface
             $file->delete();
         });
 
-        SendFileDeletedNotificationJob::dispatch($originalName, $deletedAt);
+        try {
+            SendFileDeletedNotificationJob::dispatch($originalName, $deletedAt);
+        } catch (Throwable $e) {
+            Log::error('File-deleted notification could not be queued.', [
+                'file' => $originalName,
+                'deleted_at' => $deletedAt,
+                'error' => $e->getMessage(),
+            ]);
+        }
     }
 
     /**

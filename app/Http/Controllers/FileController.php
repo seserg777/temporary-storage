@@ -36,11 +36,11 @@ class FileController extends Controller
 
         return response()->json([
             'message' => 'File uploaded successfully.',
-            'file'    => [
-                'id'            => $uploadedFile->id,
+            'file' => [
+                'id' => $uploadedFile->id,
                 'original_name' => $uploadedFile->original_name,
-                'size'          => $uploadedFile->size,
-                'expires_at'    => $uploadedFile->expires_at->toIso8601String(),
+                'size' => $uploadedFile->size,
+                'expires_at' => $uploadedFile->expires_at->toIso8601String(),
             ],
         ], 201);
     }
