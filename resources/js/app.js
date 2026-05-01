@@ -60,6 +60,15 @@ $(function () {
                 window.location.href = '/files';
             },
             error: function (xhr) {
+                if (xhr.status === 419) {
+                    showError('Your session has expired. Please refresh the page and try again.');
+                    return;
+                }
+                if (xhr.status === 429) {
+                    const seconds = parseInt(xhr.getResponseHeader('Retry-After') || '60', 10);
+                    showError('Too many uploads. Please wait ' + seconds + ' second(s) before trying again.');
+                    return;
+                }
                 const json = xhr.responseJSON;
                 let msg = 'Upload failed. Please try again.';
                 if (json && json.errors && json.errors.file && json.errors.file[0]) {

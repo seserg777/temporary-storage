@@ -86,14 +86,14 @@ class FilesCleanupCommandTest extends TestCase
     {
         return UploadedFile::create([
             'original_name' => $originalName,
-            'stored_name'   => basename($path),
-            'mime_type'     => 'application/pdf',
-            'size'          => 1024,
-            'disk'          => 'public',
-            'path'          => $path,
-            'expires_at'    => $expired
-                ? Carbon::now()->subDay()
-                : Carbon::now()->addDays(7),
+            'stored_name' => basename($path),
+            'mime_type' => 'application/pdf',
+            'size' => 1024,
+            'disk' => 'public',
+            'path' => $path,
+            'expires_at' => $expired
+                ? Carbon::now()->subHour()
+                : Carbon::now()->addHours(24),
         ]);
     }
 }
