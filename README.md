@@ -4,7 +4,7 @@ Application for temporary file sharing. Users upload PDF or DOCX files (up to 10
 
 ## Tech Stack
 
-- **Laravel 13** (PHP 8.3) — framework
+- **[Laravel 13](https://laravel.com/)** (PHP 8.3) — framework
 - **Livewire 3** — reactive file list without page reloads
 - **Tailwind CSS 4** — utility-first styling (Vite build)
 - **MySQL 8.0** — persistent storage
@@ -44,7 +44,7 @@ All file business logic is encapsulated behind `FileStorageServiceInterface`. Co
 composer setup
 ```
 
-### Environment (`.env` — already configured for OSPanel)
+### Environment (`.env` — already configured)
 
 ```
 DB_CONNECTION=mysql
